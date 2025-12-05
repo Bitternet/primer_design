@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результаты анализа: {{ results.target_name if results else 'Результаты' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <nav class="navbar">
+                <a href="/" class="logo">
+                    <span class="logo-icon">🧬</span>
+                    <span>PrimerDesign</span>
+                </a>
+                <ul class="nav-links">
+                    <li><a href="/"><i class="fas fa-home"></i> Главная</a></li>
+                    <li><a href="#"><i class="fas fa-history"></i> История</a></li>
+                    <li><a href="#"><i class="fas fa-question-circle"></i> Помощь</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {% if not results %}
+        <!-- Если нет данных -->
+        <div class="main-card">
+            <div class="alert" style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; padding: 1.5rem; border-radius: 8px; margin: 1rem 0; color: #92400e;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3 style="color: #92400e; margin-bottom: 10px;">Данные не найдены</h3>
+                <p style="color: #92400e;">Не удалось загрузить результаты анализа.</p>
+                <a href="/" class="btn btn-primary" style="margin-top: 15px;">
+                    <i class="fas fa-home"></i> Вернуться на главную
+                </a>
+            </div>
+        </div>
+        
+        {% else %}
+        <!-- Hero Section -->
+        <div class="hero">
+            <h1>Результаты анализа праймеров</h1>
+            <p class="lead">{{ results.target_name }}</p>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="param-grid" style="margin: 2rem 0;">
+            <div class="param-card">
+                <div class="param-header">
+                    <i class="fas fa-code param-icon"></i>
+                    <h3 class="param-title">Всего праймеров</h3>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color); text-align: center; margin: 1rem 0;">
+                    {{ results.summary.total_designed }}
+                </div>
+                <div style="color: var(--gray-color); text-align: center;">Создано Primer3</div>
+            </div>
+            
+            <div class="param-card">
+                <div class="param-header">
+                    <i class="fas fa-search param-icon"></i>
+                    <h3 class="param-title">Специфичные</h3>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color); text-align: center; margin: 1rem 0;">
+                    {{ results.summary.passed_blast }}
+                </div>
+                <div style="color: var(--gray-color); text-align: center;">Прошли BLAST</div>
+            </div>
+            
+            <div class="param-card">
+                <div class="param-header">
+                    <i class="fas fa-chart-line param-icon"></i>
+                    <h3 class="param-title">Проанализировано</h3>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color); text-align: center; margin: 1rem 0;">
+                    {{ results.summary.fully_analyzed }}
+                </div>
+                <div style="color: var(--gray-color); text-align: center;">ViennaRNA анализ</div>
+            </div>
+            
+            <div class="param-card">
+                <div class="param-header">
+                    <i class="fas fa-trophy param-icon"></i>
+                    <h3 class="param-title">Рекомендовано</h3>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color); text-align: center; margin: 1rem 0;">
+                    {{ results.summary.recommended if results.summary.recommended is defined else results.primers|length }}
+                </div>
+                <div style="color: var(--gray-color); text-align: center;">Лучшие кандидаты</div>
+            </div>
+        </div>
+
+        <!-- Main Results Card -->
+        <div class="main-card">
+            <div class="card-header">
+                <div class="card-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <h2 class="card-title">🎯 Лучшие праймеры</h2>
+            </div>
+
+            <!-- Primer Tabs -->
+            <div class="primer-tabs" id="primerTabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid rgba(67, 97, 238, 0.1); padding-bottom: 10px; flex-wrap: wrap;">
+                {% for primer in results.primers %}
+                <button class="primer-tab {% if loop.first %}active{% endif %}" 
+                        onclick="showPrimer('{{ loop.index0 }}')"
+                        style="padding: 10px 20px; background: white; border: 2px solid rgba(67, 97, 238, 0.2); border-radius: 50px; cursor: pointer; font-weight: bold; transition: all 0.3s; color: var(--gray-color);">
+                    Праймер #{{ loop.index }}
+                    <span style="font-size: 12px; opacity: 0.8;">
+                        {% if primer.status == 'recommended' %} ✅
+                        {% elif primer.status == 'acceptable' %} ⚠️
+                        {% elif primer.status == 'marginal' %} ⚡
+                        {% else %} ❌
+                        {% endif %}
+                    </span>
+                </button>
+                {% endfor %}
+            </div>
+
+            <!-- Primer Contents -->
+            {% for primer in results.primers %}
+            <div class="primer-content {% if loop.first %}active{% endif %}" id="primer{{ loop.index0 }}" style="display: {% if loop.first %}block{% else %}none{% endif %};">
+                <div class="primer-card" style="border: 1px solid #e2e8f0; border-radius: var(--border-radius); padding: 25px; margin-bottom: 25px; background: white; position: relative; overflow: hidden; {% if primer.status == 'recommended' %}border-left: 5px solid #10b981; background: linear-gradient(to right, rgba(16, 185, 129, 0.05), white);{% elif primer.status == 'acceptable' %}border-left: 5px solid #f59e0b; background: linear-gradient(to right, rgba(245, 158, 11, 0.05), white);{% elif primer.status == 'marginal' %}border-left: 5px solid #fd7e14; background: linear-gradient(to right, rgba(253, 126, 20, 0.05), white);{% else %}border-left: 5px solid #ef4444; background: linear-gradient(to right, rgba(239, 68, 68, 0.05), white);{% endif %}">
+                    <!-- Badge -->
+                    <div class="primer-badge" style="position: absolute; top: 15px; right: 15px; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; {% if primer.status == 'recommended' %}background: #10b981; color: white;{% elif primer.status == 'acceptable' %}background: #f59e0b; color: #000;{% elif primer.status == 'marginal' %}background: #fd7e14; color: white;{% else %}background: #ef4444; color: white;{% endif %}">
+                        {% if primer.status == 'recommended' %} ✅ Рекомендуется
+                        {% elif primer.status == 'acceptable' %} ⚠️ Приемлемо
+                        {% elif primer.status == 'marginal' %} ⚡ Пограничный
+                        {% else %} ❌ Не рекомендуется
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Header -->
+                    <div style="margin-top: 30px; margin-bottom: 20px;">
+                        <h3 style="margin: 0; color: var(--primary-color); display: flex; justify-content: space-between; align-items: center;">
+                            <span>Праймер #{{ loop.index }}</span>
+                            <span style="font-size: 1.5rem; color: var(--secondary-color);">
+                                Оценка: {{ primer.final_score | default(primer.stability_score, true) | round(1) }}/100
+                            </span>
+                        </h3>
+                    </div>
+
+                    <!-- Sequences -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: var(--secondary-color); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-code"></i> Последовательности
+                        </h4>
+                        <div class="sequence-box" style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0; font-family: 'Monaco', 'Courier New', monospace; font-size: 1.1rem; letter-spacing: 1px; color: var(--dark-color); overflow-x: auto; white-space: nowrap;">
+                            <span class="sequence-label" style="background: var(--primary-color); color: white; padding: 2px 10px; border-radius: 4px; font-size: 0.85rem; margin-right: 10px; vertical-align: middle;">5' → 3' (прямой)</span>
+                            <span id="forward-seq-{{ loop.index0 }}">{{ primer.left_seq }}</span>
+                        </div>
+                        <div class="sequence-box" style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0; font-family: 'Monaco', 'Courier New', monospace; font-size: 1.1rem; letter-spacing: 1px; color: var(--dark-color); overflow-x: auto; white-space: nowrap;">
+                            <span class="sequence-label" style="background: var(--primary-color); color: white; padding: 2px 10px; border-radius: 4px; font-size: 0.85rem; margin-right: 10px; vertical-align: middle;">5' → 3' (обратный)</span>
+                            <span id="reverse-seq-{{ loop.index0 }}">{{ primer.right_seq }}</span>
+                        </div>
+                        
+                        <!-- Copy Button -->
+                        <button class="btn-copy" onclick="copyPrimerPair('{{ loop.index0 }}')" style="margin-top: 10px; padding: 8px 16px; background: var(--primary-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-copy"></i> Копировать последовательности
+                        </button>
+                    </div>
+
+                    <!-- Basic Parameters -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: var(--secondary-color); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-sliders-h"></i> Основные параметры
+                        </h4>
+                        <div class="param-grid" style="margin: 0;">
+                            <div class="param-card">
+                                <div class="param-header">
+                                    <i class="fas fa-expand-arrows-alt param-icon"></i>
+                                    <h3 class="param-title">Размер продукта</h3>
+                                </div>
+                                <div style="font-size: 1.8rem; font-weight: bold; color: var(--primary-color); text-align: center; margin: 0.5rem 0;">
+                                    {{ primer.product_size }} пн
+                                </div>
+                            </div>
+                            
+                            <div class="param-card">
+                                <div class="param-header">
+                                    <i class="fas fa-thermometer-half param-icon"></i>
+                                    <h3 class="param-title">Tm (прямой)</h3>
+                                </div>
+                                <div style="font-size: 1.8rem; font-weight: bold; color: var(--primary-color); text-align: center; margin: 0.5rem 0;">
+                                    {{ primer.left_tm }}°C
+                                </div>
+                            </div>
+                            
+                            <div class="param-card">
+                                <div class="param-header">
+                                    <i class="fas fa-thermometer-half param-icon"></i>
+                                    <h3 class="param-title">Tm (обратный)</h3>
+                                </div>
+                                <div style="font-size: 1.8rem; font-weight: bold; color: var(--primary-color); text-align: center; margin: 0.5rem 0;">
+                                    {{ primer.right_tm }}°C
+                                </div>
+                            </div>
+                            
+                            <div class="param-card">
+                                <div class="param-header">
+                                    <i class="fas fa-percentage param-icon"></i>
+                                    <h3 class="param-title">GC (прямой)</h3>
+                                </div>
+                                <div style="font-size: 1.8rem; font-weight: bold; color: var(--primary-color); text-align: center; margin: 0.5rem 0;">
+                                    {{ primer.left_gc if primer.left_gc is defined else 'N/A' }}%
+                                </div>
+                            </div>
+                            
+                            <div class="param-card">
+                                <div class="param-header">
+                                    <i class="fas fa-percentage param-icon"></i>
+                                    <h3 class="param-title">GC (обратный)</h3>
+                                </div>
+                                <div style="font-size: 1.8rem; font-weight: bold; color: var(--primary-color); text-align: center; margin: 0.5rem 0;">
+                                    {{ primer.right_gc if primer.right_gc is defined else 'N/A' }}%
+                                </div>
+                            </div>
+                            
+                            <div class="param-card">
+                                <div class="param-header">
+                                    <i class="fas fa-balance-scale param-icon"></i>
+                                    <h3 class="param-title">Penalty</h3>
+                                </div>
+                                <div style="font-size: 1.8rem; font-weight: bold; color: var(--primary-color); text-align: center; margin: 0.5rem 0;">
+                                    {{ primer.pair_penalty }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thermodynamic Parameters -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: var(--secondary-color); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-fire"></i> Термодинамические характеристики
+                        </h4>
+                        <div class="thermo-bars" style="display: flex; flex-direction: column; gap: 15px; margin: 20px 0;">
+                            <!-- Forward Primer -->
+                            <div class="thermo-bar" style="display: flex; align-items: center; gap: 15px;">
+                                <div class="thermo-label" style="width: 200px; font-size: 0.9rem; color: var(--dark-color);">Само-связывание (прямой)</div>
+                                <div class="thermo-value" style="width: 80px; text-align: right; font-weight: bold; color: var(--primary-color);">{{ primer.forward_self_energy | default(0) | round(2) }}</div>
+                                <div class="thermo-visual" style="flex: 1; height: 20px; background: #e2e8f0; border-radius: 10px; overflow: hidden; position: relative;">
+                                    {% set forward_energy = primer.forward_self_energy | default(0) | float %}
+                                    {% if forward_energy < -5 %}
+                                        <div class="thermo-fill" style="height: 100%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); border-radius: 10px; width: 100%;"></div>
+                                    {% elif forward_energy < -2 %}
+                                        <div class="thermo-fill" style="height: 100%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); border-radius: 10px; width: 50%;"></div>
+                                    {% else %}
+                                        <div class="thermo-fill" style="height: 100%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); border-radius: 10px; width: 20%;"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Reverse Primer -->
+                            <div class="thermo-bar" style="display: flex; align-items: center; gap: 15px;">
+                                <div class="thermo-label" style="width: 200px; font-size: 0.9rem; color: var(--dark-color);">Само-связывание (обратный)</div>
+                                <div class="thermo-value" style="width: 80px; text-align: right; font-weight: bold; color: var(--primary-color);">{{ primer.reverse_self_energy | default(0) | round(2) }}</div>
+                                <div class="thermo-visual" style="flex: 1; height: 20px; background: #e2e8f0; border-radius: 10px; overflow: hidden; position: relative;">
+                                    {% set reverse_energy = primer.reverse_self_energy | default(0) | float %}
+                                    {% if reverse_energy < -5 %}
+                                        <div class="thermo-fill" style="height: 100%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); border-radius: 10px; width: 100%;"></div>
+                                    {% elif reverse_energy < -2 %}
+                                        <div class="thermo-fill" style="height: 100%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); border-radius: 10px; width: 50%;"></div>
+                                    {% else %}
+                                        <div class="thermo-fill" style="height: 100%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); border-radius: 10px; width: 20%;"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Heterodimer -->
+                            <div class="thermo-bar" style="display: flex; align-items: center; gap: 15px;">
+                                <div class="thermo-label" style="width: 200px; font-size: 0.9rem; color: var(--dark-color);">Гетеродимер</div>
+                                <div class="thermo-value" style="width: 80px; text-align: right; font-weight: bold; color: var(--primary-color);">{{ primer.heterodimer_energy | default(0) | round(2) }}</div>
+                                <div class="thermo-visual" style="flex: 1; height: 20px; background: #e2e8f0; border-radius: 10px; overflow: hidden; position: relative;">
+                                    {% set hetero_energy = primer.heterodimer_energy | default(0) | float %}
+                                    {% if hetero_energy < -8 %}
+                                        <div class="thermo-fill" style="height: 100%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); border-radius: 10px; width: 100%;"></div>
+                                    {% elif hetero_energy < -4 %}
+                                        <div class="thermo-fill" style="height: 100%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); border-radius: 10px; width: 70%;"></div>
+                                    {% elif hetero_energy < -2 %}
+                                        <div class="thermo-fill" style="height: 100%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); border-radius: 10px; width: 40%;"></div>
+                                    {% else %}
+                                        <div class="thermo-fill" style="height: 100%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); border-radius: 10px; width: 10%;"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Details Table -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: var(--secondary-color); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-info-circle"></i> Детали
+                        </h4>
+                        <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                            <thead>
+                                <tr>
+                                    <th style="background: var(--primary-color); color: white; padding: 15px; text-align: left;">Параметр</th>
+                                    <th style="background: var(--primary-color); color: white; padding: 15px; text-align: left;">Значение</th>
+                                    <th style="background: var(--primary-color); color: white; padding: 15px; text-align: left;">Описание</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid #e2e8f0;">
+                                    <td style="padding: 15px;">Длина прямого праймера</td>
+                                    <td style="padding: 15px; font-weight: bold; color: var(--primary-color);">{{ primer.left_seq | length }} нт</td>
+                                    <td style="padding: 15px; color: var(--gray-color);">Оптимально: 18-25 нт</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e2e8f0;">
+                                    <td style="padding: 15px;">Длина обратного праймера</td>
+                                    <td style="padding: 15px; font-weight: bold; color: var(--primary-color);">{{ primer.right_seq | length }} нт</td>
+                                    <td style="padding: 15px; color: var(--gray-color);">Оптимально: 18-25 нт</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e2e8f0;">
+                                    <td style="padding: 15px;">Разница Tm</td>
+                                    <td style="padding: 15px; font-weight: bold; color: var(--primary-color);">{{ (primer.left_tm - primer.right_tm) | abs | round(2) }}°C</td>
+                                    <td style="padding: 15px; color: var(--gray-color);">Идеально < 2°C</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 15px;">Средний GC</td>
+                                    <td style="padding: 15px; font-weight: bold; color: var(--primary-color);">
+                                        {% if primer.left_gc is defined and primer.right_gc is defined %}
+                                            {{ ((primer.left_gc + primer.right_gc) / 2) | round(1) }}%
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 15px; color: var(--gray-color);">Оптимально: 40-60%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Warnings -->
+                    {% if primer.warnings %}
+                    <div style="margin-bottom: 25px;">
+                        <div class="warnings-box" style="background: rgba(245, 158, 11, 0.1); border-left: 5px solid #f59e0b; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                            <h4 style="color: #92400e; margin-top: 0; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-exclamation-triangle"></i> Предупреждения
+                            </h4>
+                            <ul style="margin: 0; padding-left: 1.5rem; color: #92400e;">
+                                {% for warning in primer.warnings %}
+                                <li style="margin-bottom: 5px;">{{ warning }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Parameters Card -->
+        <div class="main-card">
+            <div class="card-header">
+                <div class="card-icon">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <h2 class="card-title">⚙️ Параметры анализа</h2>
+            </div>
+            <div style="background: rgba(67, 97, 238, 0.05); padding: 20px; border-radius: 10px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                    {% for key, value in results.parameters_used.items() %}
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(67, 97, 238, 0.1);">
+                        <strong style="color: var(--dark-color);">{{ key | replace('_', ' ') | title }}:</strong>
+                        <span style="color: var(--primary-color); font-weight: 500;">{{ value }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="main-card">
+            <div class="card-header">
+                <div class="card-icon">
+                    <i class="fas fa-download"></i>
+                </div>
+                <h2 class="card-title">Действия</h2>
+            </div>
+            <div class="action-buttons" style="display: flex; gap: 15px; margin-top: 30px; padding-top: 30px; border-top: 2px solid rgba(67, 97, 238, 0.1);">
+                <button class="btn btn-primary" onclick="window.location.href='/'">
+                    <i class="fas fa-arrow-left"></i> Назад к дизайну
+                </button>
+                
+                <div style="flex: 1;"></div>
+                
+                <button class="btn btn-secondary" onclick="printPage()" style="background: white; color: var(--primary-color); border: 2px solid var(--primary-color);">
+                    <i class="fas fa-print"></i> Печать отчёта
+                </button>
+                
+                <div class="export-options" style="display: flex; gap: 10px;">
+                    <button class="export-btn" onclick="downloadJSON()" style="padding: 8px 15px; border: 2px solid rgba(67, 97, 238, 0.2); background: white; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s; color: var(--gray-color);">
+                        <i class="fas fa-file-code"></i> JSON
+                    </button>
+                    <button class="export-btn" onclick="downloadTXT()" style="padding: 8px 15px; border: 2px solid rgba(67, 97, 238, 0.2); background: white; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s; color: var(--gray-color);">
+                        <i class="fas fa-file-alt"></i> TXT
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 Система автоматизированного дизайна праймеров.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Переключение между праймерами
+        function showPrimer(index) {
+            // Скрываем все контенты
+            document.querySelectorAll('.primer-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // Убираем активный класс со всех табов
+            document.querySelectorAll('.primer-tab').forEach(tab => {
+                tab.style.background = 'white';
+                tab.style.borderColor = 'rgba(67, 97, 238, 0.2)';
+                tab.style.color = 'var(--gray-color)';
+            });
+            
+            // Показываем выбранный контент
+            document.getElementById(`primer${index}`).style.display = 'block';
+            
+            // Активируем выбранный таб
+            const activeTab = event.currentTarget;
+            activeTab.style.background = 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))';
+            activeTab.style.borderColor = 'transparent';
+            activeTab.style.color = 'white';
+            
+            // Плавный скролл к началу карточки
+            window.scrollTo({ top: 500, behavior: 'smooth' });
+        }
+        
+        // Копирование праймеров
+        function copyPrimerPair(index) {
+            try {
+                const forward = document.getElementById(`forward-seq-${index}`).textContent;
+                const reverse = document.getElementById(`reverse-seq-${index}`).textContent;
+                
+                const text = `Прямой праймер (5' → 3'): ${forward}\nОбратный праймер (5' → 3'): ${reverse}`;
+                
+                navigator.clipboard.writeText(text).then(() => {
+                    // Визуальная обратная связь
+                    const button = event.target.closest('.btn-copy') || event.target;
+                    const originalHTML = button.innerHTML;
+                    button.innerHTML = '<i class="fas fa-check"></i> Скопировано!';
+                    button.style.backgroundColor = '#10b981';
+                    button.style.color = 'white';
+                    button.disabled = true;
+                    
+                    setTimeout(() => {
+                        button.innerHTML = originalHTML;
+                        button.style.backgroundColor = '';
+                        button.style.color = '';
+                        button.disabled = false;
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Ошибка копирования:', err);
+                    alert('Не удалось скопировать текст. Пожалуйста, скопируйте вручную.');
+                });
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при копировании данных');
+            }
+        }
+        
+        // Экспорт в JSON
+        function downloadJSON() {
+            const taskId = window.location.pathname.split('/').pop();
+            if (taskId) {
+                window.open(`/api/download/json/${taskId}`, '_blank');
+            } else {
+                alert('ID задачи не найден');
+            }
+        }
+        
+        // Экспорт в TXT
+        function downloadTXT() {
+            const taskId = window.location.pathname.split('/').pop();
+            if (taskId) {
+                window.open(`/api/download/txt/${taskId}`, '_blank');
+            } else {
+                alert('ID задачи не найден');
+            }
+        }
+        
+        // Печать страницы
+        function printPage() {
+            window.print();
+        }
+        
+        // Подсветка GC-оснований
+        document.addEventListener('DOMContentLoaded', () => {
+            const sequenceBoxes = document.querySelectorAll('.sequence-box span');
+            sequenceBoxes.forEach(span => {
+                if (span.id.startsWith('forward-') || span.id.startsWith('reverse-')) {
+                    const seq = span.textContent;
+                    let highlighted = '';
+                    
+                    for (let char of seq) {
+                        let colorClass = '';
+                        switch(char.toUpperCase()) {
+                            case 'A': colorClass = 'sequence-a'; break;
+                            case 'T': colorClass = 'sequence-t'; break;
+                            case 'G': colorClass = 'sequence-g'; break;
+                            case 'C': colorClass = 'sequence-c'; break;
+                        }
+                        highlighted += `<span class="${colorClass}">${char}</span>`;
+                    }
+                    
+                    span.innerHTML = highlighted;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

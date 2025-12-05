@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧬 Primer Design System | Автоматизированный дизайн праймеров</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <nav class="navbar">
+                <a href="/" class="logo">
+                    <span class="logo-icon">🧬</span>
+                    <span>PrimerDesign</span>
+                </a>
+                <ul class="nav-links">
+                    <li><a href="/" class="active"><i class="fas fa-home"></i> Главная</a></li>
+                    <li><a href="#"><i class="fas fa-history"></i> История задач</a></li>
+                    <li><a href="#"><i class="fas fa-user"></i> Профиль</a></li>
+                    <li><a href="#"><i class="fas fa-question-circle"></i> Помощь</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1 class="fade-in">Автоматизированный дизайн праймеров</h1>
+            <p class="lead">Профессиональная система для проектирования праймеров с проверкой специфичности и анализом вторичных структур</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Design Card -->
+        <div class="main-card fade-in">
+            <div class="card-header">
+                <div class="card-icon">
+                    <i class="fas fa-dna"></i>
+                </div>
+                <h2 class="card-title">Дизайн новых праймеров</h2>
+            </div>
+            
+            <form id="designForm">
+                <!-- Target Name -->
+                <div class="form-group">
+                    <label for="targetName" class="form-label">
+                        <i class="fas fa-tag"></i> Название мишени
+                    </label>
+                    <input type="text" class="form-control" id="targetName" 
+                           placeholder="Например: Gene_X_CRISPR, SARS-CoV-2_spike_gene" required>
+                </div>
+                
+                <!-- DNA Sequence -->
+                <div class="form-group">
+                    <label for="targetSequence" class="form-label">
+                        <i class="fas fa-code"></i> Последовательность ДНК мишени
+                    </label>
+                    <textarea class="form-control sequence-input" id="targetSequence" 
+                              rows="8" 
+                              placeholder="Введите нуклеотидную последовательность (A, T, G, C)...&#10;Пример: ATGGCTAGCTAGCTAGCTAGCTAGCTAGCTAGC" 
+                              required></textarea>
+                    <div class="form-text">
+                        <i class="fas fa-info-circle"></i> Поддерживаются только символы A, T, G, C (регистр не важен)
+                    </div>
+                </div>
+                
+                <!-- Parameters Grid -->
+                <div class="param-grid">
+                    <div class="param-card">
+                        <div class="param-header">
+                            <i class="fas fa-ruler param-icon"></i>
+                            <h3 class="param-title">Размер праймера</h3>
+                        </div>
+                        <input type="number" class="form-control" id="primerSize" 
+                               value="20" min="15" max="30" step="1">
+                        <div class="form-text">Оптимальный размер: 18-22 bp</div>
+                    </div>
+                    
+                    <div class="param-card">
+                        <div class="param-header">
+                            <i class="fas fa-thermometer-half param-icon"></i>
+                            <h3 class="param-title">Температура плавления</h3>
+                        </div>
+                        <input type="number" step="0.1" class="form-control" id="tmValue" 
+                               value="60.0" min="55" max="65">
+                        <div class="form-text">Оптимальная Tm: 58-62°C</div>
+                    </div>
+                    
+                    <div class="param-card">
+                        <div class="param-header">
+                            <i class="fas fa-expand-arrows-alt param-icon"></i>
+                            <h3 class="param-title">Размер продукта</h3>
+                        </div>
+                        <input type="text" class="form-control" id="productSize" 
+                               value="100-300" placeholder="мин-макс">
+                        <div class="form-text">Рекомендуется: 100-500 bp</div>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary btn-lg btn-block" id="submitBtn">
+                    <span class="btn-icon">
+                        <i class="fas fa-rocket"></i>
+                    </span>
+                    <span id="btnText">Запустить дизайн праймеров</span>
+                    <span class="spinner d-none" id="spinner"></span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Status Card -->
+        <div class="status-card fade-in">
+            <div class="card-header">
+                <div class="card-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h2 class="card-title">Статус задачи</h2>
+            </div>
+            
+            <div class="status-content" id="taskStatus">
+                <div class="status-placeholder">
+                    <i class="fas fa-clock fa-2x" style="color: #c3cfe2; margin-bottom: 1rem;"></i>
+                    <p>Запустите задачу для отображения статуса</p>
+                </div>
+            </div>
+            
+            <div class="progress-container d-none" id="progressBarContainer">
+                <div class="progress-bar" id="progressBar">
+                    <span class="progress-text" id="progressText">0%</span>
+                </div>
+            </div>
+            
+            <div id="taskDetails" class="d-none">
+                <div class="task-info">
+                    <p><strong>ID задачи:</strong> <span id="taskId">-</span></p>
+                    <p><strong>Статус:</strong> <span id="statusText" class="status-badge">-</span></p>
+                    <p><strong>Прогресс:</strong> <span id="progressPercent">0%</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Card -->
+        <div class="info-card fade-in">
+            <div class="card-header">
+                <div class="card-icon">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <h2 class="card-title" style="color: #c3cfe2;">Технологии системы</h2>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Primer3</h4>
+                        <p>Алгоритм для автоматического дизайна праймеров с оптимальными параметрами</p>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>BLAST+</h4>
+                        <p>Проверка специфичности праймеров против геномных баз данных</p>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>ViennaRNA</h4>
+                        <p>Анализ вторичных структур и термодинамических параметров</p>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Flask + Celery</h4>
+                        <p>Веб-интерфейс и распределённая обработка задач</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 Система автоматизированного дизайна праймеров.</p>
+            <p class="mt-1">
+                <small>
+                    <i class="fas fa-shield-alt"></i> Все данные обрабатываются локально
+                    <span class="mx-2">•</span>
+                    <i class="fas fa-bolt"></i> Поддержка форматов: FASTA, GenBank
+                </small>
+            </p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Utility functions
+        function showElement(id) {
+            document.getElementById(id).classList.remove('d-none');
+        }
+        
+        function hideElement(id) {
+            document.getElementById(id).classList.add('d-none');
+        }
+        
+        // Form submission
+        document.getElementById('designForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const spinner = document.getElementById('spinner');
+            const btnText = document.getElementById('btnText');
+            
+            // Update UI
+            submitBtn.disabled = true;
+            spinner.classList.remove('d-none');
+            btnText.textContent = 'Обработка...';
+            
+            // Get form data
+            const formData = {
+                target_name: document.getElementById('targetName').value.trim(),
+                target_sequence: document.getElementById('targetSequence').value.toUpperCase().replace(/\s/g, ''),
+                parameters: {
+                    primer_size: parseInt(document.getElementById('primerSize').value),
+                    tm: parseFloat(document.getElementById('tmValue').value),
+                    product_range: document.getElementById('productSize').value
+                }
+            };
+            
+            // Validate sequence
+            const validChars = /^[ATGC]+$/i;
+            if (!validChars.test(formData.target_sequence)) {
+                alert('Ошибка: Последовательность должна содержать только символы A, T, G, C');
+                submitBtn.disabled = false;
+                spinner.classList.add('d-none');
+                btnText.textContent = 'Запустить дизайн праймеров';
+                return;
+            }
+            
+            if (formData.target_sequence.length < 50) {
+                alert('Внимание: Рекомендуемая длина последовательности - не менее 50 нуклеотидов');
+            }
+            
+            try {
+                // Send request
+                const response = await fetch('/api/design', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Show success message
+                    showElement('progressBarContainer');
+                    showElement('taskDetails');
+                    
+                    document.getElementById('taskId').textContent = data.task_id;
+                    document.getElementById('statusText').textContent = 'Запущена';
+                    document.getElementById('statusText').className = 'status-badge status-running';
+                    
+                    // Update task status display
+                    document.getElementById('taskStatus').innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            <strong>Задача запущена успешно!</strong>
+                            <p>ID: ${data.task_id}</p>
+                        </div>
+                    `;
+                    
+                    // Start monitoring
+                    startTaskMonitoring(data.task_id);
+                    
+                } else {
+                    throw new Error(data.message || 'Ошибка сервера');
+                }
+                
+            } catch (error) {
+                // Show error
+                document.getElementById('taskStatus').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <strong>Ошибка:</strong> ${error.message}
+                    </div>
+                `;
+                console.error('Error:', error);
+                
+            } finally {
+                // Reset button
+                submitBtn.disabled = false;
+                spinner.classList.add('d-none');
+                btnText.textContent = 'Запустить дизайн праймеров';
+            }
+        });
+        
+        // Task monitoring
+        function startTaskMonitoring(taskId) {
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const progressPercent = document.getElementById('progressPercent');
+            const statusText = document.getElementById('statusText');
+            
+            const statusMap = {
+                'pending': { text: 'В ожидании', class: 'status-pending' },
+                'running': { text: 'Выполняется', class: 'status-running' },
+                'analyzing': { text: 'Анализ', class: 'status-analyzing' },
+                'completed': { text: 'Завершена', class: 'status-completed' },
+                'failed': { text: 'Ошибка', class: 'status-failed' }
+            };
+            
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/task/${taskId}`);
+                    const data = await response.json();
+                    
+                    // Update progress
+                    const progress = data.progress || 0;
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `${progress}%`;
+                    progressPercent.textContent = `${progress}%`;
+                    
+                    // Update status
+                    const status = statusMap[data.status] || { text: data.status, class: '' };
+                    statusText.textContent = status.text;
+                    statusText.className = `status-badge ${status.class}`;
+                    
+                    // Update task status display
+                    let statusHtml = '';
+                    if (data.status === 'completed' && data.results) {
+                        const primersCount = data.results.primers ? data.results.primers.length : 0;
+                        statusHtml = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
+                                <strong>Задача завершена успешно!</strong>
+                                <p>Найдено праймеров: ${primersCount}</p>
+                                <a href="/results/${taskId}" class="btn btn-sm btn-primary mt-2">
+                                    <i class="fas fa-chart-bar"></i> Просмотреть результаты
+                                </a>
+                            </div>
+                        `;
+                        clearInterval(interval);
+                        
+                    } else if (data.status === 'failed') {
+                        statusHtml = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <strong>Задача завершена с ошибкой:</strong>
+                                <p>${data.error || 'Неизвестная ошибка'}</p>
+                            </div>
+                        `;
+                        clearInterval(interval);
+                        
+                    } else {
+                        statusHtml = `
+                            <div class="alert alert-info">
+                                <i class="fas fa-sync-alt fa-spin"></i>
+                                <strong>Задача выполняется...</strong>
+                                <p>Статус: ${status.text}</p>
+                                <p>Прогресс: ${progress}%</p>
+                            </div>
+                        `;
+                    }
+                    
+                    document.getElementById('taskStatus').innerHTML = statusHtml;
+                    
+                } catch (error) {
+                    console.error('Monitoring error:', error);
+                }
+            }, 2000); // Poll every 2 seconds
+        }
+        
+        // Sequence input formatting
+        document.getElementById('targetSequence').addEventListener('input', function(e) {
+            // Remove non-DNA characters
+            this.value = this.value.replace(/[^atgcATGC\s]/g, '');
+            
+            // Optional: Add syntax highlighting
+            highlightSequence(this);
+        });
+        
+        function highlightSequence(textarea) {
+            // This is a simplified version - implement full syntax highlighting if needed
+            const seq = textarea.value.toUpperCase();
+            let highlighted = '';
+            
+            for (let char of seq) {
+                switch(char) {
+                    case 'A': highlighted += '<span class="sequence-a">A</span>'; break;
+                    case 'T': highlighted += '<span class="sequence-t">T</span>'; break;
+                    case 'G': highlighted += '<span class="sequence-g">G</span>'; break;
+                    case 'C': highlighted += '<span class="sequence-c">C</span>'; break;
+                    default: highlighted += char;
+                }
+            }
+            
+            // For a real implementation, you would need a contenteditable div
+            // instead of a textarea
+        }
+        
+        // Add CSS classes for status badges
+        const style = document.createElement('style');
+        style.textContent = `
+            .status-badge {
+                display: inline-block;
+                padding: 0.25rem 0.75rem;
+                border-radius: 20px;
+                font-size: 0.875rem;
+                font-weight: 600;
+            }
+            .status-pending { background: #fbbf24; color: #78350f; }
+            .status-running { background: #60a5fa; color: #1e3a8a; }
+            .status-analyzing { background: #8b5cf6; color: #f5f3ff; }
+            .status-completed { background: #10b981; color: white; }
+            .status-failed { background: #ef4444; color: white; }
+            .d-none { display: none !important; }
+            .alert {
+                padding: 1rem;
+                border-radius: 12px;
+                margin: 1rem 0;
+            }
+            .alert-success {
+                background: rgba(16, 185, 129, 0.1);
+                border: 1px solid rgba(16, 185, 129, 0.2);
+                color: #065f46;
+            }
+            .alert-danger {
+                background: rgba(239, 68, 68, 0.1);
+                border: 1px solid rgba(239, 68, 68, 0.2);
+                color: #991b1b;
+            }
+            .alert-info {
+                background: rgba(59, 130, 246, 0.1);
+                border: 1px solid rgba(59, 130, 246, 0.2);
+                color: #1e40af;
+            }
+            .mt-1 { margin-top: 0.5rem; }
+            .mt-2 { margin-top: 1rem; }
+            .mx-2 { margin: 0 0.5rem; }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

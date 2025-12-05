@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Дизайн праймеров{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav style="background: #007bff; color: white; padding: 15px 30px;">
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+            <a href="{{ url_for('main.index') }}" style="color: white; text-decoration: none; font-size: 20px; font-weight: bold;">
+                🧬 PrimerDesign
+            </a>
+            <div>
+                {% if current_user.is_authenticated %}
+                <span style="margin-right: 20px;">👤 {{ current_user.username }}</span>
+                <a href="{{ url_for('main.logout') }}" style="color: white; text-decoration: none;">Выйти</a>
+                {% else %}
+                <a href="{{ url_for('main.login') }}" style="color: white; text-decoration: none;">Войти</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <footer style="background: #f8f9fa; padding: 20px; text-align: center; margin-top: 50px; border-top: 1px solid #ddd;">
+        <p>Система автоматизированного дизайна праймеров © 2025</p>
+    </footer>
+</body>
+</html>
